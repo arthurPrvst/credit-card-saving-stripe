@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import Stripe from 'stripe';
 import { StripeLogsEntity } from './entities/stripe-logs.entity'
 import { UsersService } from '../users/users.service';
+import { PaymentService } from '../payment/payment.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
@@ -9,8 +10,10 @@ import { Repository } from 'typeorm';
 export class StripeService {
     private stripe: Stripe;
     private stripeSecretKey : "FOR_EXAMPLE_ONLY" // should not be hardcoded and pushed. Add it in your prod env
+    private stripeWebhookSecretKey : "FOR_EXAMPLE_ONLY" // should not be hardcoded and pushed. Add it in your prod env
 
     constructor(@InjectRepository(StripeLogsEntity) private stripeLogsRepository: Repository<StripeLogsEntity>,
+        private paymentService: PaymentService,
         private usersService: UsersService) {
         this.stripe = new Stripe(this.stripeSecretKey, {
             apiVersion: '2020-08-27',
@@ -37,15 +40,13 @@ export class StripeService {
 
         try {
             // Check if webhook signing is configured.
-            const webhookSecret = this.configService.environment.stripe.webhookSecret;
-
-            if (webhookSecret) {
+            if (this.stripeWebhookSecretKey) {
                 let signature: any = req.headers['stripe-signature'];
                 try {
                     event = this.stripe.webhooks.constructEvent(
                         req.rawBody,
                         signature,
-                        webhookSecret
+                        this.stripeWebhookSecretKey
                     );
                 } catch (err) {
                     console.log("err", err);
@@ -64,6 +65,7 @@ export class StripeService {
             console.log("Will process payment update for userId =", id);
             
             cardIntent = event.data.object;
+            let paymentEntity = await this.paymentService.getPayment(cardIntent.id);
             console.log("Will handle event.type", event.type);
 
             /* WARNING : Unordered async flow !!
@@ -76,7 +78,9 @@ export class StripeService {
                 */
                 case 'setup_intent.created':
                     console.log(`SetupIntent for ${JSON.stringify(cardIntent.id)} will be created!`);
+                    await this.paymentService.createPayment(user, cardIntent.id, "setup_intent.created");
                     await this.createLogs(user, "setup_intent.created");
+
                     console.log(`Customer ${JSON.stringify(cardIntent.customer)} will be created!`);
                     await this.usersService.updateStripeCustomer(user, cardIntent.customer);
 
@@ -85,36 +89,42 @@ export class StripeService {
                 case 'setup_intent.requires_action':
                     console.log(`SetupIntent for ${JSON.stringify(cardIntent.id)} requires an action!`);
                     await this.createLogs(user, "setup_intent.requires_action");
+                    await this.paymentService.createPayment(user, cardIntent.id, "setup_intent.requires_action");
                     
                     return { responseStatusCode: 200 };
 
                 case 'setup_intent.canceled':
                     console.log(`SetupIntent for ${JSON.stringify(cardIntent.id)} canceled!`);
                     await this.createLogs(user, "setup_intent.canceled");
+                    await this.paymentService.createPayment(user, cardIntent.id, "setup_intent.canceled");
 
                     return { responseStatusCode: 200 };
 
                 case 'setup_intent.setup_failed':
                     console.log(`SetupIntent for ${JSON.stringify(cardIntent.id)} failed!`);
                     await this.createLogs(user, "setup_intent.setup_failed");
+                    await this.paymentService.createPayment(user, cardIntent.id, "setup_intent.setup_failed");
 
                     return { responseStatusCode: 200 };
 
                 case 'setup_intent.succeeded':
                     console.log(`SetupIntent for ${JSON.stringify(cardIntent.id)} was succesfull!`);
                     await this.createLogs(user, "setup_intent.succeeded");
-                    
+                    await this.paymentService.createPayment(user, cardIntent.id, "setup_intent.succeeded");
+
                     return { responseStatusCode: 200 };
 
                 case 'payment_intent.created':
                     console.log(`PaymentIntent for ${JSON.stringify(cardIntent.id)} will be created!`);
                     await this.createLogs(user, "payment_intent.created");
+                    await this.paymentService.createPayment(user, cardIntent.id, "payment_intent.created");
 
                     return { responseStatusCode: 200 };
 
                 case 'payment_intent.requires_action':
                     console.log(`PaymentIntent for ${JSON.stringify(cardIntent.id)} requires an action!`);
                     await this.createLogs(user, "payment_intent.requires_action");
+                    await this.paymentService.createPayment(user, cardIntent.id, "payment_intent.requires_action");
 
                     return { responseStatusCode: 200 };
 
@@ -122,24 +132,28 @@ export class StripeService {
                 case 'payment_intent.requires_capture':
                     console.log(`PaymentIntent for ${JSON.stringify(cardIntent.id)} requires a capture!`);
                     await this.createLogs(user, "payment_intent.requires_capture");
+                    await this.paymentService.createPayment(user, cardIntent.id, "payment_intent.requires_capture");
 
                     return { responseStatusCode: 200 };
 
                 case 'payment_intent.canceled':
                     console.log(`PaymentIntent for ${JSON.stringify(cardIntent.id)} canceled!`);
                     await this.createLogs(user, "payment_intent.canceled");
+                    this.paymentService.createPayment(user, cardIntent.id, "payment_intent.canceled");
 
                     return { responseStatusCode: 200 };
 
                 case 'payment_intent.payment_failed':
                     console.log(`PaymentIntent for ${JSON.stringify(cardIntent.id)} failed!`);
                     await this.createLogs(user, "payment_intent.payment_failed");
+                    await this.paymentService.createPayment(user, cardIntent.id, "payment_intent.payment_failed");
 
                     return { responseStatusCode: 200 };
 
                 case 'payment_intent.succeeded':
                     console.log(`PaymentIntent for ${JSON.stringify(cardIntent.id)} was successful!`);
                     await this.createLogs(user, "payment_intent.succeeded");
+                    await this.paymentService.createPayment(user, cardIntent.id, "payment_intent.succeeded");
 
                     return { responseStatusCode: 200 };
                 
