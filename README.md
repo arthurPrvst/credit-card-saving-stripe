@@ -22,7 +22,7 @@
 <br />
 
 <div align="center"><strong>Save client's credit card in your web app with Stripe</strong></div>
-<div align="center">Implement delay orr scheduled payment saving credit card in your React/NestJS app</div>
+<div align="center">Implement delay or scheduled payment saving credit card in your React/NestJS app</div>
 
 <br />
 
@@ -53,7 +53,7 @@ Hi, if you want to execute delayed or scheduled payments in your app, you'll hav
 This module is here to complete the Stripe documentation and is providing you:
 - card information saving
 - delayed / scheduled payment
-- notification by mail when delayed payment failed (3DS aauthentication ask another time, no caash available...)
+- notification by mail when delayed payment failed (3DS authentication asked another time, no cash available in the user's account...)
 
 You can use this module to learn how to implement the system in your app, or just to copy past it in your project to get something working directly. ¯&#92;&#95;(ツ)&#95;/¯
 
