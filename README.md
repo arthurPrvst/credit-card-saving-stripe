@@ -21,7 +21,7 @@
 
 <br />
 
-<div align="center"><strong>Save client's credit card in your web app with Stripe</strong></div>
+<div align="center"><strong>Save customer's payment credentials in your web app with Stripe</strong></div>
 <div align="center">Implement delay or scheduled payment saving credit card in your React/NestJS app</div>
 
 <br />

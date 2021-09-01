@@ -3,22 +3,12 @@ Add folder `backend/stripe` in your `backend/src/api`.
 
 Don't forget to add `StripeModule` in the imports of the `app.module`.
 
-### Step 2
+### Step 2 - Back
 Add folder `backend/payment` in your `backend/src/api`.
 
 Don't forget to add `PaymentModule` in the imports of the `app.module`.
 
-### Step 3
-Update
-
-    stripe: {
-        prices: {
-            product_1: "price_1xXxXXxxxXXXxxxxX"
-        },
-        secretKey: "sk_test_xXxXXxxxXXXxxxxXxXxXXxxxXXXxxxxXxXxXXxxxXXXxxxxXxXxXXxxxXXXxxxxXxXxXXxxxXXXxxxxXxXxXXxxxXXXxxxxX",
-        webhookSecret: "whsec_3xXxXXxxxXXXxxxxXxXxXXxxxXXXxxxxX"
-    },
-
+### Step 3 - Back
 Update `stripeSecretKey` in `StripeController` with the secretKey from your stripe account.
 Update `stripeSecretKey` and `stripeWebhookSecretKey` in `StripeService` with the secretKey and webhook secret from your stripe account.
 
@@ -35,39 +25,36 @@ For the webhookSecret you need to create a webhook with these events:
 - payment_intent.payment_failed
 - payment_intent.succeeded
 
-### Step 4
+### Step 4 - Back
 In user.interface.ts add this: `stripeCustomer?: string;`
 
 In user.interface.ts add this: 
-
 <pre>
     @Column({ nullable: true, select: false })
     stripeCustomer: string;
 </pre>
 
-### Step 5
-
+### Step 5 - Back
 In user.service.ts add following code : 
 
 <pre>
     async updateStripeCustomer(
         userId: string,
-        stripeCustomerId
+        stripeCustomer
     ) {
         const userEntity = new UserEntity();
 
-        userEntity.stripeCustomerId = stripeCustomerId;
+        userEntity.stripeCustomer = stripeCustomer;
 
         return await this.userRepository.update(userId, userEntity);
     }
     
 </pre>
 
-### Step 6
+### Step 6 - Back
 In backend install `npm install stripe@8.132.0`
 
-### Step 7
-
+### Step 7 - Back
 Add following code in main.ts
 
 <pre>
@@ -94,20 +81,20 @@ And following code in pages.navigation.tsx :
     <Route exact path="/example" component={PaymentSiScreen} />
 ```
 
-### Step 9
+### Step 9 - Front
 Add folder `frontend/services/stripe.service.ts` in your `frontend/services`.
 
-### Step 10
+### Step 10 - Front
 In frontend install `npm install @stripe/stripe-js@1.11.0`
 
-### Step 11
-Add stripe public key in PaymentSiScreen :
+### Step 11 - Front
+Add stripe public key in `PaymentSiScreen` :
 <pre>
     stripeSecretKey: "pk_test_XxxXXXXxXXXXXXXxXXxxxxxXxxXXXXxXXXXXXXxXXxxxxxXxxXXXXxXXXXXXXxXXxxxxxXxxXXXXxXXXXXXXxXXxxxxx"
 </pre>
 
 ### Bonus
 
-If you want to inform your users when they correctly saveed their card or when a delayed payment failed, you can use a mailer module and send mail in the webhook function in `stripe/stripe.service.ts`.
+If you want to contact your users when they correctly saved their card or when a delayed payment failed, you can use a mailer module and send mail in the webhook function in `stripe/stripe.service.ts`.
 
 That's it ! :rocket:
